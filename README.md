@@ -2,7 +2,7 @@
 
 High-performance Text-to-Speech server using PyTorch with GPU batching and real-time streaming.
 
-IMPORTANT: You will need to download the safetensors version of this Supertonic 2 model here:
+**IMPORTANT: You will need to download the safetensors version of this Supertonic 2 model here:**
 https://huggingface.co/DevParker/Supertonic-2-Saftetensor/tree/main
 
 This is a GPU based implementation of Supertonic 2 and does not use the ONNX model.
