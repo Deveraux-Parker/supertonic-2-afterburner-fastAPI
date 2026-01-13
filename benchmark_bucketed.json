@@ -1,0 +1,187 @@
+{
+  "timestamp": "2026-01-12T18:51:05.368667",
+  "config": {
+    "server_url": "http://localhost:8002",
+    "duration_per_test": 20.0,
+    "listen_ratio": 1.0,
+    "user_counts": [
+      100,
+      200,
+      300,
+      400,
+      500
+    ],
+    "text_weights": {
+      "short": 0.5,
+      "medium": 0.35,
+      "long": 0.15
+    }
+  },
+  "results": [
+    {
+      "concurrent_users": 100,
+      "test_duration_seconds": 21.67,
+      "total_requests": 941,
+      "failed_requests": 0,
+      "requests_per_second": 43.43,
+      "audio_seconds_generated": 6325.28,
+      "latency_ms": {
+        "avg": 372.0,
+        "p50": 188.5,
+        "p95": 1445.3,
+        "p99": 2056.1
+      },
+      "latency_by_category": {
+        "short": {
+          "p50": 160.2,
+          "p95": 847.6,
+          "count": 479
+        },
+        "medium": {
+          "p50": 239.9,
+          "p95": 1514.2,
+          "count": 331
+        },
+        "long": {
+          "p50": 427.5,
+          "p95": 2122.9,
+          "count": 131
+        }
+      },
+      "avg_batch_size": 5.7,
+      "success_rate_percent": 100.0
+    },
+    {
+      "concurrent_users": 200,
+      "test_duration_seconds": 22.31,
+      "total_requests": 1659,
+      "failed_requests": 0,
+      "requests_per_second": 74.35,
+      "audio_seconds_generated": 11610.58,
+      "latency_ms": {
+        "avg": 593.8,
+        "p50": 279.4,
+        "p95": 2004.5,
+        "p99": 2723.7
+      },
+      "latency_by_category": {
+        "short": {
+          "p50": 207.5,
+          "p95": 1712.6,
+          "count": 861
+        },
+        "medium": {
+          "p50": 392.0,
+          "p95": 2026.0,
+          "count": 542
+        },
+        "long": {
+          "p50": 537.1,
+          "p95": 2162.9,
+          "count": 256
+        }
+      },
+      "avg_batch_size": 8.8,
+      "success_rate_percent": 100.0
+    },
+    {
+      "concurrent_users": 300,
+      "test_duration_seconds": 23.81,
+      "total_requests": 2349,
+      "failed_requests": 0,
+      "requests_per_second": 98.67,
+      "audio_seconds_generated": 16293.49,
+      "latency_ms": {
+        "avg": 890.0,
+        "p50": 373.6,
+        "p95": 3476.8,
+        "p99": 5009.3
+      },
+      "latency_by_category": {
+        "short": {
+          "p50": 247.7,
+          "p95": 2460.0,
+          "count": 1218
+        },
+        "medium": {
+          "p50": 524.6,
+          "p95": 3535.3,
+          "count": 773
+        },
+        "long": {
+          "p50": 673.7,
+          "p95": 3699.3,
+          "count": 358
+        }
+      },
+      "avg_batch_size": 10.8,
+      "success_rate_percent": 100.0
+    },
+    {
+      "concurrent_users": 400,
+      "test_duration_seconds": 24.36,
+      "total_requests": 2935,
+      "failed_requests": 0,
+      "requests_per_second": 120.48,
+      "audio_seconds_generated": 20132.06,
+      "latency_ms": {
+        "avg": 1073.0,
+        "p50": 405.4,
+        "p95": 4017.5,
+        "p99": 5245.1
+      },
+      "latency_by_category": {
+        "short": {
+          "p50": 251.6,
+          "p95": 3965.5,
+          "count": 1474
+        },
+        "medium": {
+          "p50": 628.7,
+          "p95": 4067.4,
+          "count": 1033
+        },
+        "long": {
+          "p50": 979.1,
+          "p95": 4059.0,
+          "count": 428
+        }
+      },
+      "avg_batch_size": 12.1,
+      "success_rate_percent": 100.0
+    },
+    {
+      "concurrent_users": 500,
+      "test_duration_seconds": 25.87,
+      "total_requests": 3215,
+      "failed_requests": 0,
+      "requests_per_second": 124.28,
+      "audio_seconds_generated": 22364.8,
+      "latency_ms": {
+        "avg": 1708.2,
+        "p50": 772.8,
+        "p95": 5406.6,
+        "p99": 10262.9
+      },
+      "latency_by_category": {
+        "short": {
+          "p50": 408.6,
+          "p95": 5406.6,
+          "count": 1569
+        },
+        "medium": {
+          "p50": 1098.8,
+          "p95": 5387.1,
+          "count": 1172
+        },
+        "long": {
+          "p50": 2044.7,
+          "p95": 5452.7,
+          "count": 474
+        }
+      },
+      "avg_batch_size": 13.1,
+      "success_rate_percent": 100.0
+    }
+  ]
+}

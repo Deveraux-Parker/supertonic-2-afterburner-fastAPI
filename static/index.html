@@ -1,0 +1,1328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supertonic TTS</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 30px;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 0;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: transparent;
+            border: none;
+            color: #888;
+            font-size: 1rem;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.2s;
+        }
+
+        .tab:hover {
+            color: #ccc;
+        }
+
+        .tab.active {
+            color: #4facfe;
+            border-bottom-color: #4facfe;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .card h2 {
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            color: #4facfe;
+        }
+
+        .card h3 {
+            font-size: 1rem;
+            margin: 20px 0 10px 0;
+            color: #00f2fe;
+        }
+
+        .voice-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .voice-group-label {
+            grid-column: 1 / -1;
+            font-size: 0.85rem;
+            color: #888;
+            margin-top: 10px;
+        }
+
+        .voice-btn {
+            padding: 12px 20px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+            color: #e0e0e0;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .voice-btn:hover {
+            border-color: rgba(79, 172, 254, 0.5);
+            background: rgba(79, 172, 254, 0.1);
+        }
+
+        .voice-btn.selected {
+            border-color: #4facfe;
+            background: rgba(79, 172, 254, 0.2);
+            color: #fff;
+        }
+
+        .voice-btn.male { border-color: rgba(100, 149, 237, 0.3); }
+        .voice-btn.female { border-color: rgba(255, 105, 180, 0.3); }
+        .voice-btn.male.selected { border-color: #6495ed; background: rgba(100, 149, 237, 0.3); }
+        .voice-btn.female.selected { border-color: #ff69b4; background: rgba(255, 105, 180, 0.3); }
+
+        textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 15px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.3);
+            color: #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #4facfe;
+        }
+
+        .char-count {
+            text-align: right;
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .char-count.warning { color: #ffa500; }
+        .char-count.chunked { color: #4facfe; }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-group label {
+            font-size: 0.9rem;
+            color: #888;
+        }
+
+        select, input[type="number"] {
+            padding: 8px 12px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.3);
+            color: #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: #4facfe;
+        }
+
+        .generate-btn {
+            flex: 1;
+            min-width: 200px;
+            padding: 15px 30px;
+            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+            border: none;
+            border-radius: 10px;
+            color: #1a1a2e;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .generate-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(79, 172, 254, 0.4);
+        }
+
+        .generate-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .audio-section {
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            display: none;
+        }
+
+        .audio-section.visible { display: block; }
+
+        audio {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .audio-info {
+            display: flex;
+            gap: 15px;
+            font-size: 0.85rem;
+            color: #888;
+            flex-wrap: wrap;
+        }
+
+        .audio-info span {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 4px 10px;
+            border-radius: 5px;
+        }
+
+        .status {
+            text-align: center;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .status.loading { display: block; background: rgba(79, 172, 254, 0.1); color: #4facfe; }
+        .status.error { display: block; background: rgba(255, 82, 82, 0.1); color: #ff5252; }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(79, 172, 254, 0.3);
+            border-top-color: #4facfe;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .server-status {
+            text-align: center;
+            padding: 10px;
+            font-size: 0.85rem;
+            color: #888;
+        }
+
+        .server-status.online { color: #4caf50; }
+        .server-status.offline { color: #ff5252; }
+
+        /* Code blocks */
+        pre {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 8px;
+            padding: 15px;
+            overflow-x: auto;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            margin: 10px 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        code {
+            color: #e0e0e0;
+        }
+
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .code-lang {
+            font-size: 0.75rem;
+            color: #4facfe;
+            text-transform: uppercase;
+        }
+
+        .copy-btn {
+            padding: 4px 10px;
+            background: rgba(79, 172, 254, 0.2);
+            border: 1px solid rgba(79, 172, 254, 0.3);
+            border-radius: 5px;
+            color: #4facfe;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: rgba(79, 172, 254, 0.3);
+        }
+
+        /* API Docs */
+        .endpoint {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .endpoint-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .method {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .method.get { background: #4caf50; color: #fff; }
+        .method.post { background: #2196f3; color: #fff; }
+
+        .endpoint-path {
+            font-family: monospace;
+            color: #fff;
+        }
+
+        .param-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+            font-size: 0.85rem;
+        }
+
+        .param-table th, .param-table td {
+            padding: 8px 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .param-table th {
+            color: #888;
+            font-weight: 500;
+        }
+
+        .param-name { color: #4facfe; font-family: monospace; }
+        .param-type { color: #888; font-size: 0.8rem; }
+        .param-default { color: #666; }
+
+        .history { margin-top: 20px; }
+
+        .history-item {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+
+        .history-item .text {
+            font-size: 0.9rem;
+            color: #ccc;
+            margin-bottom: 10px;
+            word-break: break-word;
+        }
+
+        .history-item .meta {
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .history-item audio { margin-bottom: 0; }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+            border-radius: 3px;
+            transition: width 0.3s;
+        }
+
+        @media (max-width: 600px) {
+            .voice-grid { grid-template-columns: repeat(3, 1fr); }
+            .controls { flex-direction: column; }
+            .generate-btn { width: 100%; }
+            .tabs { overflow-x: auto; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Supertonic TTS</h1>
+        <p class="subtitle">High-Performance Text-to-Speech API</p>
+
+        <div class="server-status" id="serverStatus">Checking server...</div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('demo')">Demo</button>
+            <button class="tab" onclick="showTab('docs')">API Docs</button>
+            <button class="tab" onclick="showTab('examples')">Code Examples</button>
+        </div>
+
+        <!-- Demo Tab -->
+        <div id="demo" class="tab-content active">
+            <div class="card">
+                <h2>Select Voice</h2>
+                <div class="voice-grid">
+                    <div class="voice-group-label">Male Voices</div>
+                    <button class="voice-btn male selected" data-voice="M1">M1</button>
+                    <button class="voice-btn male" data-voice="M2">M2</button>
+                    <button class="voice-btn male" data-voice="M3">M3</button>
+                    <button class="voice-btn male" data-voice="M4">M4</button>
+                    <button class="voice-btn male" data-voice="M5">M5</button>
+
+                    <div class="voice-group-label">Female Voices</div>
+                    <button class="voice-btn female" data-voice="F1">F1</button>
+                    <button class="voice-btn female" data-voice="F2">F2</button>
+                    <button class="voice-btn female" data-voice="F3">F3</button>
+                    <button class="voice-btn female" data-voice="F4">F4</button>
+                    <button class="voice-btn female" data-voice="F5">F5</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Enter Text</h2>
+                <textarea id="textInput" placeholder="Type or paste text here to synthesize...">Hello! Welcome to Supertonic, a high-performance text-to-speech system. Try different voices to find the one you like best!</textarea>
+                <div class="char-count" id="charCount">0 characters</div>
+
+                <div class="controls">
+                    <div class="control-group">
+                        <label for="language">Language:</label>
+                        <select id="language">
+                            <option value="en" selected>English</option>
+                            <option value="ko">Korean</option>
+                            <option value="es">Spanish</option>
+                            <option value="pt">Portuguese</option>
+                            <option value="fr">French</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label for="steps">Quality:</label>
+                        <select id="steps">
+                            <option value="1">Fast (1 step)</option>
+                            <option value="2" selected>Balanced (2 steps)</option>
+                            <option value="4">High (4 steps)</option>
+                            <option value="8">Best (8 steps)</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label for="speed">Speed:</label>
+                        <select id="speed">
+                            <option value="0.8">Slow (0.8x)</option>
+                            <option value="1.0">Normal (1.0x)</option>
+                            <option value="1.05" selected>Default (1.05x)</option>
+                            <option value="1.2">Fast (1.2x)</option>
+                            <option value="1.5">Faster (1.5x)</option>
+                        </select>
+                    </div>
+
+                    <button class="generate-btn" id="generateBtn" onclick="generateSpeech()">
+                        Generate Speech
+                    </button>
+                </div>
+
+                <div class="status" id="status"></div>
+                <div class="progress-bar" id="progressBar" style="display: none;">
+                    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                </div>
+
+                <div class="audio-section" id="audioSection">
+                    <audio id="audioPlayer" controls></audio>
+                    <div class="audio-info" id="audioInfo"></div>
+                </div>
+            </div>
+
+            <div class="card history" id="historySection" style="display: none;">
+                <h2>Recent Generations</h2>
+                <div id="historyList"></div>
+            </div>
+        </div>
+
+        <!-- API Docs Tab -->
+        <div id="docs" class="tab-content">
+            <div class="card">
+                <h2>API Reference</h2>
+                <p style="color: #888; margin-bottom: 20px;">Base URL: <code>http://localhost:8002</code></p>
+
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method post">POST</span>
+                        <span class="endpoint-path">/synthesize</span>
+                    </div>
+                    <p style="color: #aaa; margin-bottom: 15px;">Generate speech from text. Returns JSON with base64-encoded audio or raw WAV file.</p>
+
+                    <h3>Request Body</h3>
+                    <table class="param-table">
+                        <tr>
+                            <th>Parameter</th>
+                            <th>Type</th>
+                            <th>Default</th>
+                            <th>Description</th>
+                        </tr>
+                        <tr>
+                            <td class="param-name">text</td>
+                            <td class="param-type">string</td>
+                            <td class="param-default">required</td>
+                            <td>Text to synthesize (1-1000 chars)</td>
+                        </tr>
+                        <tr>
+                            <td class="param-name">voice</td>
+                            <td class="param-type">string</td>
+                            <td class="param-default">"M1"</td>
+                            <td>Voice ID: M1-M5 (male), F1-F5 (female)</td>
+                        </tr>
+                        <tr>
+                            <td class="param-name">language</td>
+                            <td class="param-type">string</td>
+                            <td class="param-default">"en"</td>
+                            <td>Language: en, ko, es, pt, fr</td>
+                        </tr>
+                        <tr>
+                            <td class="param-name">steps</td>
+                            <td class="param-type">integer</td>
+                            <td class="param-default">2</td>
+                            <td>Quality steps (1-10). Higher = better quality, slower</td>
+                        </tr>
+                        <tr>
+                            <td class="param-name">speed</td>
+                            <td class="param-type">float</td>
+                            <td class="param-default">1.05</td>
+                            <td>Speech speed (0.1-3.0)</td>
+                        </tr>
+                        <tr>
+                            <td class="param-name">output_format</td>
+                            <td class="param-type">string</td>
+                            <td class="param-default">"wav"</td>
+                            <td>"wav" for raw file, "base64" for JSON response</td>
+                        </tr>
+                    </table>
+
+                    <h3>Response (output_format: "base64")</h3>
+                    <pre><code>{
+  "audio_base64": "UklGRv4...",
+  "duration_seconds": 2.5,
+  "sample_rate": 24000,
+  "inference_time_ms": 45.2,
+  "characters_per_second": 156.8,
+  "real_time_factor": 892.3,
+  "batch_size": 8,
+  "queue_time_ms": 2.1
+}</code></pre>
+                </div>
+
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method post">POST</span>
+                        <span class="endpoint-path">/synthesize/stream</span>
+                    </div>
+                    <p style="color: #aaa; margin-bottom: 15px;">
+                        <strong>Real-time streaming with Server-Sent Events (SSE).</strong>
+                        Text is auto-chunked to ~100 chars at punctuation. First chunk prioritized for instant playback.
+                        100 concurrent users get first audio in &lt;400ms with perfect gapless streaming.
+                    </p>
+                    <h3>Request Body</h3>
+                    <p style="color: #888; font-size: 0.9rem; margin-bottom: 10px;">Same parameters as /synthesize</p>
+                    <h3>Response (text/event-stream)</h3>
+                    <pre><code>event: chunk
+data: {"index": 0, "total": 3, "audio_base64": "UklGR...", "duration_seconds": 2.1, "text": "First sentence."}
+
+event: chunk
+data: {"index": 1, "total": 3, "audio_base64": "UklGR...", "duration_seconds": 1.8, "text": "Second sentence."}
+
+event: chunk
+data: {"index": 2, "total": 3, "audio_base64": "UklGR...", "duration_seconds": 2.3, "text": "Third sentence."}
+
+event: done
+data: {"total_chunks": 3}</code></pre>
+                    <p style="color: #888; font-size: 0.85rem; margin-top: 10px;">
+                        Each chunk is a complete WAV file. Play chunks sequentially for gapless audio.
+                    </p>
+                </div>
+
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method post">POST</span>
+                        <span class="endpoint-path">/synthesize/long</span>
+                    </div>
+                    <p style="color: #aaa; margin-bottom: 15px;">
+                        Synthesize long-form text (up to 50,000 chars) with automatic smart chunking.
+                        Splits at sentence/clause boundaries and processes chunks in parallel.
+                    </p>
+                    <h3>Request Body</h3>
+                    <table class="param-table">
+                        <tr>
+                            <th>Parameter</th>
+                            <th>Type</th>
+                            <th>Default</th>
+                            <th>Description</th>
+                        </tr>
+                        <tr>
+                            <td class="param-name">text</td>
+                            <td class="param-type">string</td>
+                            <td class="param-default">required</td>
+                            <td>Text to synthesize (1-50,000 chars)</td>
+                        </tr>
+                        <tr>
+                            <td class="param-name">voice</td>
+                            <td class="param-type">string</td>
+                            <td class="param-default">"M1"</td>
+                            <td>Voice ID</td>
+                        </tr>
+                        <tr>
+                            <td class="param-name">language</td>
+                            <td class="param-type">string</td>
+                            <td class="param-default">"en"</td>
+                            <td>Language code</td>
+                        </tr>
+                        <tr>
+                            <td class="param-name">steps</td>
+                            <td class="param-type">integer</td>
+                            <td class="param-default">2</td>
+                            <td>Quality steps (1-10)</td>
+                        </tr>
+                        <tr>
+                            <td class="param-name">speed</td>
+                            <td class="param-type">float</td>
+                            <td class="param-default">1.05</td>
+                            <td>Speech speed</td>
+                        </tr>
+                        <tr>
+                            <td class="param-name">target_chunk_chars</td>
+                            <td class="param-type">integer</td>
+                            <td class="param-default">300</td>
+                            <td>Target chars per chunk (100-800)</td>
+                        </tr>
+                        <tr>
+                            <td class="param-name">max_chunk_chars</td>
+                            <td class="param-type">integer</td>
+                            <td class="param-default">900</td>
+                            <td>Max chars per chunk (200-1000)</td>
+                        </tr>
+                    </table>
+                    <h3>Response</h3>
+                    <pre><code>{
+  "audio_base64": "UklGRv4...",
+  "duration_seconds": 45.2,
+  "sample_rate": 24000,
+  "total_inference_time_ms": 1250.5,
+  "chunks_processed": 12,
+  "characters_per_second": 890.3,
+  "real_time_factor": 0.028
+}</code></pre>
+                </div>
+
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="endpoint-path">/voices</span>
+                    </div>
+                    <p style="color: #aaa; margin-bottom: 15px;">List available voices and supported languages.</p>
+                    <h3>Response</h3>
+                    <pre><code>{
+  "voices": ["F1", "F2", "F3", "F4", "F5", "M1", "M2", "M3", "M4", "M5"],
+  "languages": ["en", "ko", "es", "pt", "fr"],
+  "default_voice": "M1",
+  "default_language": "en"
+}</code></pre>
+                </div>
+
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="endpoint-path">/</span>
+                    </div>
+                    <p style="color: #aaa;">Health check and server status.</p>
+                </div>
+
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="endpoint-path">/metrics</span>
+                    </div>
+                    <p style="color: #aaa;">Server performance metrics (requests, batch sizes, latency, VRAM usage).</p>
+                </div>
+
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method post">POST</span>
+                        <span class="endpoint-path">/config/batch</span>
+                    </div>
+                    <p style="color: #aaa; margin-bottom: 15px;">Adjust batching configuration at runtime.</p>
+                    <h3>Query Parameters</h3>
+                    <table class="param-table">
+                        <tr>
+                            <td class="param-name">max_batch_size</td>
+                            <td class="param-type">integer</td>
+                            <td>Max requests per batch (default: 32)</td>
+                        </tr>
+                        <tr>
+                            <td class="param-name">max_wait_time_ms</td>
+                            <td class="param-type">float</td>
+                            <td>Max wait time to form batch (default: 5ms)</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Long-Form Text</h2>
+                <p style="color: #aaa; margin-bottom: 15px;">
+                    For long text, use the <code>/synthesize/long</code> endpoint which handles everything automatically:
+                </p>
+                <ul style="color: #aaa; margin-left: 20px; margin-bottom: 15px;">
+                    <li>Splits text at natural sentence/clause boundaries</li>
+                    <li>Routes chunks to length-optimized processing buckets</li>
+                    <li>Processes chunks in parallel for speed</li>
+                    <li>Concatenates audio seamlessly</li>
+                </ul>
+                <p style="color: #aaa;">
+                    The demo tab also supports long text - it will automatically chunk and concatenate on the client side.
+                </p>
+            </div>
+
+            <div class="card">
+                <h2>Streaming Architecture</h2>
+                <h3>Priority Queue System</h3>
+                <p style="color: #aaa; margin-bottom: 15px;">
+                    The server uses dual priority queues optimized for real-time streaming:
+                </p>
+                <table class="param-table">
+                    <tr>
+                        <th>Queue</th>
+                        <th>Contents</th>
+                        <th>Priority</th>
+                        <th>Purpose</th>
+                    </tr>
+                    <tr>
+                        <td class="param-name">HIGH</td>
+                        <td>First chunks (index 0)</td>
+                        <td>Always processed first</td>
+                        <td>Instant time-to-first-audio</td>
+                    </tr>
+                    <tr>
+                        <td class="param-name">NORMAL</td>
+                        <td>Subsequent chunks (1+)</td>
+                        <td>After HIGH is empty</td>
+                        <td>Just-in-time generation</td>
+                    </tr>
+                </table>
+                <p style="color: #888; margin-top: 15px; font-size: 0.9rem;">
+                    New users' first chunks always jump the queue, ensuring everyone gets audio within ~300ms.
+                    Subsequent chunks generate while previous ones play (~3 seconds of buffer time).
+                </p>
+
+                <h3 style="margin-top: 25px;">Auto-Chunking at Punctuation</h3>
+                <p style="color: #aaa; margin-bottom: 10px;">
+                    All text is automatically split into ~100 character chunks at natural boundaries:
+                </p>
+                <ol style="color: #aaa; margin-left: 20px;">
+                    <li><strong>Sentence boundaries</strong> - Prefers splitting at . ! ?</li>
+                    <li><strong>Clause boundaries</strong> - Falls back to , ; : for long sentences</li>
+                    <li><strong>Word boundaries</strong> - Last resort for run-on text</li>
+                </ol>
+                <p style="color: #888; margin-top: 10px; font-size: 0.9rem;">
+                    This normalizes all batch items to similar size, minimizing GPU padding waste.
+                </p>
+
+                <h3 style="margin-top: 25px;">Performance Results</h3>
+                <table class="param-table">
+                    <tr>
+                        <th>Concurrent Users</th>
+                        <th>First Chunk p50</th>
+                        <th>First Chunk p95</th>
+                        <th>Gapless Streams</th>
+                    </tr>
+                    <tr>
+                        <td>10</td>
+                        <td>94ms</td>
+                        <td>101ms</td>
+                        <td>100%</td>
+                    </tr>
+                    <tr>
+                        <td>50</td>
+                        <td>255ms</td>
+                        <td>312ms</td>
+                        <td>100%</td>
+                    </tr>
+                    <tr>
+                        <td class="param-name">100</td>
+                        <td class="param-name">284ms</td>
+                        <td class="param-name">359ms</td>
+                        <td class="param-name">100%</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- Code Examples Tab -->
+        <div id="examples" class="tab-content">
+            <div class="card">
+                <h2>Python</h2>
+                <div class="code-header">
+                    <span class="code-lang">Python (requests)</span>
+                    <button class="copy-btn" onclick="copyCode('python-basic')">Copy</button>
+                </div>
+                <pre id="python-basic"><code>import requests
+import base64
+
+response = requests.post("http://localhost:8002/synthesize", json={
+    "text": "Hello, this is a test of the Supertonic TTS system.",
+    "voice": "F1",
+    "language": "en",
+    "steps": 2,
+    "speed": 1.05,
+    "output_format": "base64"
+})
+
+data = response.json()
+audio_bytes = base64.b64decode(data["audio_base64"])
+
+with open("output.wav", "wb") as f:
+    f.write(audio_bytes)
+
+print(f"Generated {data['duration_seconds']:.2f}s of audio")
+print(f"Inference time: {data['inference_time_ms']:.1f}ms")</code></pre>
+
+                <div class="code-header">
+                    <span class="code-lang">Python (stream to file)</span>
+                    <button class="copy-btn" onclick="copyCode('python-stream')">Copy</button>
+                </div>
+                <pre id="python-stream"><code>import requests
+
+response = requests.post(
+    "http://localhost:8002/synthesize/stream",
+    json={"text": "Hello world!", "voice": "M1"},
+    stream=True
+)
+
+with open("output.wav", "wb") as f:
+    for chunk in response.iter_content(chunk_size=8192):
+        f.write(chunk)</code></pre>
+
+                <div class="code-header">
+                    <span class="code-lang">Python (long-form - server-side chunking)</span>
+                    <button class="copy-btn" onclick="copyCode('python-longform')">Copy</button>
+                </div>
+                <pre id="python-longform"><code>import requests
+import base64
+
+# Long-form endpoint handles chunking automatically!
+long_text = """
+The Supertonic TTS system is designed for high-performance text-to-speech
+synthesis. It uses advanced neural network architecture with GPU batching
+to achieve over 900x realtime audio generation.
+
+The server automatically splits long text at natural sentence and clause
+boundaries, routes chunks to length-optimized processing buckets, and
+concatenates the audio seamlessly.
+
+This makes it easy to generate audiobooks, podcasts, or any long-form
+content with a single API call.
+"""
+
+response = requests.post("http://localhost:8002/synthesize/long", json={
+    "text": long_text,
+    "voice": "F2",
+    "language": "en",
+    "steps": 2,
+    "speed": 1.05,
+    "target_chunk_chars": 300,  # Optimize for short bucket
+    "max_chunk_chars": 900
+})
+
+data = response.json()
+audio_bytes = base64.b64decode(data["audio_base64"])
+
+with open("long_output.wav", "wb") as f:
+    f.write(audio_bytes)
+
+print(f"Generated {data['duration_seconds']:.1f}s of audio")
+print(f"Processed {data['chunks_processed']} chunks")
+print(f"Inference time: {data['total_inference_time_ms']:.1f}ms")
+print(f"Speed: {data['characters_per_second']:.0f} chars/sec")</code></pre>
+            </div>
+
+            <div class="card">
+                <h2>JavaScript / TypeScript</h2>
+                <div class="code-header">
+                    <span class="code-lang">JavaScript (Browser)</span>
+                    <button class="copy-btn" onclick="copyCode('js-browser')">Copy</button>
+                </div>
+                <pre id="js-browser"><code>async function synthesize(text, voice = "M1") {
+  const response = await fetch("http://localhost:8002/synthesize", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      text,
+      voice,
+      output_format: "base64"
+    })
+  });
+
+  const data = await response.json();
+
+  // Play audio
+  const audio = new Audio("data:audio/wav;base64," + data.audio_base64);
+  audio.play();
+
+  return data;
+}
+
+// Usage
+synthesize("Hello from JavaScript!", "F1")
+  .then(data => console.log(`Generated ${data.duration_seconds}s`));</code></pre>
+
+                <div class="code-header">
+                    <span class="code-lang">Node.js</span>
+                    <button class="copy-btn" onclick="copyCode('js-node')">Copy</button>
+                </div>
+                <pre id="js-node"><code>const fs = require('fs');
+
+async function synthesize(text, voice = "M1") {
+  const response = await fetch("http://localhost:8002/synthesize/stream", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text, voice })
+  });
+
+  const buffer = await response.arrayBuffer();
+  fs.writeFileSync("output.wav", Buffer.from(buffer));
+}
+
+synthesize("Hello from Node.js!", "M2");</code></pre>
+            </div>
+
+            <div class="card">
+                <h2>cURL</h2>
+                <div class="code-header">
+                    <span class="code-lang">cURL (save to file)</span>
+                    <button class="copy-btn" onclick="copyCode('curl-file')">Copy</button>
+                </div>
+                <pre id="curl-file"><code># Save audio to file
+curl -X POST http://localhost:8002/synthesize/stream \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Hello from cURL!", "voice": "M1"}' \
+  --output speech.wav</code></pre>
+
+                <div class="code-header">
+                    <span class="code-lang">cURL (JSON response)</span>
+                    <button class="copy-btn" onclick="copyCode('curl-json')">Copy</button>
+                </div>
+                <pre id="curl-json"><code># Get JSON with base64 audio
+curl -X POST http://localhost:8002/synthesize \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "Hello world!",
+    "voice": "F1",
+    "language": "en",
+    "steps": 2,
+    "speed": 1.05,
+    "output_format": "base64"
+  }'</code></pre>
+
+                <div class="code-header">
+                    <span class="code-lang">cURL (list voices)</span>
+                    <button class="copy-btn" onclick="copyCode('curl-voices')">Copy</button>
+                </div>
+                <pre id="curl-voices"><code>curl http://localhost:8002/voices</code></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedVoice = 'M1';
+        let history = [];
+        const maxHistory = 5;
+        const CHUNK_SIZE = 900;
+
+        // Tab switching
+        function showTab(tabId) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelector(`[onclick="showTab('${tabId}')"]`).classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        // Voice selection
+        document.querySelectorAll('.voice-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.voice-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                selectedVoice = btn.dataset.voice;
+            });
+        });
+
+        // Character count
+        const textInput = document.getElementById('textInput');
+        const charCount = document.getElementById('charCount');
+
+        function updateCharCount() {
+            const len = textInput.value.length;
+            const chunks = Math.ceil(len / CHUNK_SIZE);
+
+            if (len === 0) {
+                charCount.textContent = '0 characters';
+                charCount.className = 'char-count';
+            } else if (len <= 1000) {
+                charCount.textContent = `${len} characters`;
+                charCount.className = 'char-count';
+            } else {
+                charCount.textContent = `${len} characters (will be split into ${chunks} chunks)`;
+                charCount.className = 'char-count chunked';
+            }
+        }
+
+        textInput.addEventListener('input', updateCharCount);
+        updateCharCount();
+
+        // Server status
+        async function checkServer() {
+            const statusEl = document.getElementById('serverStatus');
+            try {
+                const response = await fetch('/');
+                if (response.ok) {
+                    const data = await response.json();
+                    statusEl.textContent = `Server online - ${data.device} - Batching: ${data.batch_config.max_batch_size} max`;
+                    statusEl.className = 'server-status online';
+                } else {
+                    throw new Error('Server error');
+                }
+            } catch (e) {
+                statusEl.textContent = 'Server offline - Start the server first';
+                statusEl.className = 'server-status offline';
+            }
+        }
+
+        checkServer();
+        setInterval(checkServer, 30000);
+
+        // Text chunking
+        function chunkText(text, maxChars = CHUNK_SIZE) {
+            const sentences = text.split(/(?<=[.!?])\s+/);
+            const chunks = [];
+            let current = "";
+
+            for (const sentence of sentences) {
+                if (current.length + sentence.length + 1 <= maxChars) {
+                    current = (current + " " + sentence).trim();
+                } else {
+                    if (current) chunks.push(current);
+                    if (sentence.length > maxChars) {
+                        // Force split long sentences
+                        for (let i = 0; i < sentence.length; i += maxChars) {
+                            chunks.push(sentence.slice(i, i + maxChars));
+                        }
+                        current = "";
+                    } else {
+                        current = sentence;
+                    }
+                }
+            }
+            if (current) chunks.push(current);
+            return chunks;
+        }
+
+        // Concatenate WAV files
+        function concatenateWav(buffers) {
+            // Simple WAV concatenation - assumes same format
+            if (buffers.length === 1) return buffers[0];
+
+            const views = buffers.map(b => new DataView(b));
+            let totalDataSize = 0;
+
+            // Calculate total data size (skip headers)
+            for (const view of views) {
+                totalDataSize += view.byteLength - 44; // WAV header is 44 bytes
+            }
+
+            // Create output buffer
+            const output = new ArrayBuffer(44 + totalDataSize);
+            const outView = new DataView(output);
+            const outBytes = new Uint8Array(output);
+
+            // Copy header from first file
+            outBytes.set(new Uint8Array(buffers[0].slice(0, 44)), 0);
+
+            // Update sizes in header
+            outView.setUint32(4, 36 + totalDataSize, true);  // ChunkSize
+            outView.setUint32(40, totalDataSize, true);       // Subchunk2Size
+
+            // Copy audio data
+            let offset = 44;
+            for (const buffer of buffers) {
+                const data = new Uint8Array(buffer.slice(44));
+                outBytes.set(data, offset);
+                offset += data.length;
+            }
+
+            return output;
+        }
+
+        // Generate speech
+        async function generateSpeech() {
+            const text = textInput.value.trim();
+            if (!text) {
+                showStatus('Please enter some text', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('generateBtn');
+            const statusEl = document.getElementById('status');
+            const audioSection = document.getElementById('audioSection');
+            const progressBar = document.getElementById('progressBar');
+            const progressFill = document.getElementById('progressFill');
+
+            btn.disabled = true;
+            audioSection.classList.remove('visible');
+
+            const chunks = chunkText(text);
+            const isChunked = chunks.length > 1;
+
+            if (isChunked) {
+                progressBar.style.display = 'block';
+                progressFill.style.width = '0%';
+            }
+
+            const startTime = performance.now();
+            const audioBuffers = [];
+            let totalInferenceTime = 0;
+
+            try {
+                for (let i = 0; i < chunks.length; i++) {
+                    const chunk = chunks[i];
+                    btn.textContent = isChunked ? `Generating ${i + 1}/${chunks.length}...` : 'Generating...';
+                    showStatus(`<span class="spinner"></span>${isChunked ? `Processing chunk ${i + 1} of ${chunks.length}...` : 'Generating speech...'}`, 'loading');
+
+                    if (isChunked) {
+                        progressFill.style.width = `${(i / chunks.length) * 100}%`;
+                    }
+
+                    const response = await fetch('/synthesize/stream', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            text: chunk,
+                            voice: selectedVoice,
+                            language: document.getElementById('language').value,
+                            steps: parseInt(document.getElementById('steps').value),
+                            speed: parseFloat(document.getElementById('speed').value)
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const error = await response.json();
+                        throw new Error(error.detail || 'Generation failed');
+                    }
+
+                    const inferenceTime = parseFloat(response.headers.get('X-Inference-Time-Ms') || '0');
+                    totalInferenceTime += inferenceTime;
+
+                    const buffer = await response.arrayBuffer();
+                    audioBuffers.push(buffer);
+                }
+
+                if (isChunked) {
+                    progressFill.style.width = '100%';
+                }
+
+                const totalTime = performance.now() - startTime;
+
+                // Concatenate if multiple chunks
+                const finalAudio = concatenateWav(audioBuffers);
+                const blob = new Blob([finalAudio], { type: 'audio/wav' });
+                const audioUrl = URL.createObjectURL(blob);
+
+                // Calculate duration from WAV header
+                const view = new DataView(finalAudio);
+                const sampleRate = view.getUint32(24, true);
+                const dataSize = view.getUint32(40, true);
+                const bytesPerSample = view.getUint16(34, true) / 8;
+                const channels = view.getUint16(22, true);
+                const duration = dataSize / (sampleRate * bytesPerSample * channels);
+
+                // Play audio
+                const audioPlayer = document.getElementById('audioPlayer');
+                audioPlayer.src = audioUrl;
+                audioPlayer.play();
+
+                // Show info
+                const audioInfo = document.getElementById('audioInfo');
+                const rtf = (duration * 1000) / totalInferenceTime;
+                audioInfo.innerHTML = `
+                    <span>Voice: ${selectedVoice}</span>
+                    <span>Duration: ${duration.toFixed(2)}s</span>
+                    <span>Inference: ${totalInferenceTime.toFixed(1)}ms</span>
+                    <span>Total: ${totalTime.toFixed(0)}ms</span>
+                    ${isChunked ? `<span>Chunks: ${chunks.length}</span>` : ''}
+                    <span>${rtf.toFixed(0)}x realtime</span>
+                `;
+
+                audioSection.classList.add('visible');
+                statusEl.className = 'status';
+                statusEl.style.display = 'none';
+                progressBar.style.display = 'none';
+
+                // Add to history
+                addToHistory(text, selectedVoice, duration, audioUrl);
+
+            } catch (e) {
+                showStatus('Error: ' + e.message, 'error');
+                progressBar.style.display = 'none';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Generate Speech';
+            }
+        }
+
+        function showStatus(message, type) {
+            const statusEl = document.getElementById('status');
+            statusEl.innerHTML = message;
+            statusEl.className = 'status ' + type;
+        }
+
+        function addToHistory(text, voice, duration, audioUrl) {
+            history.unshift({
+                text: text.substring(0, 100) + (text.length > 100 ? '...' : ''),
+                voice: voice,
+                duration: duration,
+                audioUrl: audioUrl,
+                timestamp: new Date()
+            });
+
+            if (history.length > maxHistory) {
+                const removed = history.pop();
+                URL.revokeObjectURL(removed.audioUrl);
+            }
+
+            renderHistory();
+        }
+
+        function renderHistory() {
+            const section = document.getElementById('historySection');
+            const list = document.getElementById('historyList');
+
+            if (history.length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+
+            section.style.display = 'block';
+            list.innerHTML = history.map((item, i) => `
+                <div class="history-item">
+                    <div class="text">"${item.text}"</div>
+                    <div class="meta">Voice: ${item.voice} | Duration: ${item.duration.toFixed(2)}s</div>
+                    <audio controls src="${item.audioUrl}"></audio>
+                </div>
+            `).join('');
+        }
+
+        // Copy code
+        function copyCode(id) {
+            const code = document.getElementById(id).textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                const btn = document.querySelector(`[onclick="copyCode('${id}')"]`);
+                btn.textContent = 'Copied!';
+                setTimeout(() => btn.textContent = 'Copy', 2000);
+            });
+        }
+
+        // Keyboard shortcut
+        textInput.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'Enter') {
+                generateSpeech();
+            }
+        });
+    </script>
+</body>
+</html>
